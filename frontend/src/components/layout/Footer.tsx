@@ -31,22 +31,13 @@ export function Footer() {
 
         <div className="flex items-center gap-4">
           <a
-            href="https://twitter.com/basaborProtocol"
+            href="https://twitter.com/basaltProtocol"
             target="_blank"
             rel="noopener noreferrer"
             className="p-2 text-foreground-tertiary hover:text-foreground hover:bg-background-surface-raised rounded-lg transition-colors"
             aria-label="Twitter"
           >
             <TwitterIcon className="w-4 h-4" />
-          </a>
-          <a
-            href="https://discord.gg/basalt"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 text-foreground-tertiary hover:text-foreground hover:bg-background-surface-raised rounded-lg transition-colors"
-            aria-label="Discord"
-          >
-            <DiscordIcon className="w-4 h-4" />
           </a>
           <a
             href="https://github.com/udoka-osaji/basalt-protocol"
@@ -67,13 +58,13 @@ export function Footer() {
             <ExternalLink className="w-4 h-4" />
             <span>Explorer</span>
           </a>
-          <a
-            href="#"
-            className="flex items-center gap-1.5 text-foreground-tertiary hover:text-foreground transition-colors"
+          <span
+            className="flex items-center gap-1.5 text-foreground-tertiary cursor-default"
+            title="SIP Draft coming soon"
           >
             <FileText className="w-4 h-4" />
-            <span>SIP Draft</span>
-          </a>
+            <span>SIP Draft (Soon)</span>
+          </span>
         </div>
       </div>
     </footer>

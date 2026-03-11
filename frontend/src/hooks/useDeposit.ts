@@ -5,10 +5,10 @@ import { useWallet } from '@/context/WalletContext';
 
 export function useDeposit(vaultName: string) {
   const queryClient = useQueryClient();
-  const { refreshBalance } = useWallet();
+  const { refreshBalance, address } = useWallet();
 
   return useMutation({
-    mutationFn: (amount: bigint) => deposit(vaultName, amount),
+    mutationFn: (amount: bigint) => deposit(vaultName, amount, address!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: vaultKeys.stats(vaultName) });
       queryClient.invalidateQueries({ queryKey: vaultKeys.all });

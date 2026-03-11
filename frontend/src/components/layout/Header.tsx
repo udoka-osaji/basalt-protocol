@@ -69,7 +69,7 @@ export function Header() {
                   onClick={() => setOpen(false)}
                   className="px-3 py-2.5 rounded-md text-sm font-medium transition-colors text-foreground-secondary hover:text-foreground hover:bg-background-surface inline-flex items-center gap-2"
                 >
-                  Docs
+                  GitHub
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               </nav>
@@ -109,7 +109,7 @@ export function Header() {
               rel="noopener noreferrer"
               className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors text-foreground-secondary hover:text-foreground inline-flex items-center gap-1.5"
             >
-              Docs
+              GitHub
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </nav>
