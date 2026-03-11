@@ -106,3 +106,58 @@ describe("lending-strategy-vault", () => {
     );
     expect(result).toBeErr(Cl.uint(4002));
   });
+
+  it("multiple users can deposit into strategy vault", () => {
+    simnet.callPublicFn("lending-strategy-vault", "deposit", [Cl.uint(3000)], wallet1);
+    simnet.callPublicFn("lending-strategy-vault", "deposit", [Cl.uint(7000)], wallet2);
+
+    const totalShares = simnet.callReadOnlyFn("lending-strategy-vault", "get-total-shares", [], deployer);
+    expect(totalShares.result).toBeOk(Cl.uint(10000));
+
+    const w1Balance = simnet.callReadOnlyFn(
+      "lending-strategy-vault",
+      "get-share-balance",
+      [Cl.principal(wallet1)],
+      deployer
+    );
+    expect(w1Balance.result).toBeOk(Cl.uint(3000));
+
+    const w2Balance = simnet.callReadOnlyFn(
+      "lending-strategy-vault",
+      "get-share-balance",
+      [Cl.principal(wallet2)],
+      deployer
+    );
+    expect(w2Balance.result).toBeOk(Cl.uint(7000));
+  });
+
+  it("sync-yield captures lending pool interest", () => {
+    // Deposit into vault
+    simnet.callPublicFn("lending-strategy-vault", "deposit", [Cl.uint(10000)], wallet1);
+
+    // Simulate interest accrual in the lending pool for the vault contract
+    const vaultPrincipal = `${deployer}.lending-strategy-vault`;
+    simnet.callPublicFn(
+      "mock-lending-pool",
+      "accrue-interest",
+      [Cl.principal(vaultPrincipal), Cl.uint(500)],
+      deployer
+    );
+
+    // Sync yield so vault recognizes the new interest
+    const syncResult = simnet.callPublicFn(
+      "lending-strategy-vault",
+      "sync-yield",
+      [],
+      deployer
+    );
+    expect(syncResult.result).toBeOk(Cl.uint(500));
+
+    // Vault total-assets should now be 10500
+    const vaultAssets = simnet.callReadOnlyFn("lending-strategy-vault", "get-total-assets", [], deployer);
+    expect(vaultAssets.result).toBeOk(Cl.uint(10500));
+
+    // Shares stay at 10000 -> share price increased
+    const vaultShares = simnet.callReadOnlyFn("lending-strategy-vault", "get-total-shares", [], deployer);
+    expect(vaultShares.result).toBeOk(Cl.uint(10000));
+  });
