@@ -93,3 +93,78 @@ describe("basalt-vault", () => {
     const assets = simnet.callReadOnlyFn("basalt-vault", "get-total-assets", [], deployer);
     expect(assets.result).toBeOk(Cl.uint(3000));
   });
+
+  it("allows full withdrawal", () => {
+    // Deposit first
+    simnet.callPublicFn("basalt-vault", "deposit", [Cl.uint(1000)], wallet1);
+
+    // Withdraw all shares
+    const { result } = simnet.callPublicFn(
+      "basalt-vault",
+      "withdraw",
+      [Cl.uint(1000)],
+      wallet1
+    );
+    expect(result).toBeOk(Cl.uint(1000));
+
+    // Check balances are zero
+    const assets = simnet.callReadOnlyFn("basalt-vault", "get-total-assets", [], deployer);
+    expect(assets.result).toBeOk(Cl.uint(0));
+
+    const shares = simnet.callReadOnlyFn("basalt-vault", "get-total-shares", [], deployer);
+    expect(shares.result).toBeOk(Cl.uint(0));
+
+    const balance = simnet.callReadOnlyFn(
+      "basalt-vault",
+      "get-share-balance",
+      [Cl.principal(wallet1)],
+      deployer
+    );
+    expect(balance.result).toBeOk(Cl.uint(0));
+  });
+
+  it("rejects withdrawal of zero shares", () => {
+    const { result } = simnet.callPublicFn("basalt-vault", "withdraw", [Cl.uint(0)], wallet1);
+    expect(result).toBeErr(Cl.uint(1001));
+  });
+
+  it("rejects withdrawal exceeding balance", () => {
+    simnet.callPublicFn("basalt-vault", "deposit", [Cl.uint(500)], wallet1);
+    const { result } = simnet.callPublicFn(
+      "basalt-vault",
+      "withdraw",
+      [Cl.uint(1000)],
+      wallet1
+    );
+    expect(result).toBeErr(Cl.uint(1002));
+  });
+
+  it("harvest-yield increases asset-per-share ratio", () => {
+    // Deposit 1000 sBTC
+    simnet.callPublicFn("basalt-vault", "deposit", [Cl.uint(1000)], wallet1);
+
+    // Deployer harvests 500 sBTC yield
+    const harvestResult = simnet.callPublicFn(
+      "basalt-vault",
+      "harvest-yield",
+      [Cl.uint(500)],
+      deployer
+    );
+    expect(harvestResult.result).toBeOk(Cl.uint(500));
+
+    // Total assets should be 1500, shares still 1000
+    const assets = simnet.callReadOnlyFn("basalt-vault", "get-total-assets", [], deployer);
+    expect(assets.result).toBeOk(Cl.uint(1500));
+
+    const shares = simnet.callReadOnlyFn("basalt-vault", "get-total-shares", [], deployer);
+    expect(shares.result).toBeOk(Cl.uint(1000));
+
+    // Withdrawing all 1000 shares should return 1500 assets
+    const { result } = simnet.callPublicFn(
+      "basalt-vault",
+      "withdraw",
+      [Cl.uint(1000)],
+      wallet1
+    );
+    expect(result).toBeOk(Cl.uint(1500));
+  });
