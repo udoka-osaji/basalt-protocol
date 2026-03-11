@@ -37,8 +37,12 @@ export function TransactionPanel({ config }: TransactionPanelProps) {
   const { data: txStatusData } = useTxStatus(activeTxId);
 
   // Derived values
-  const rawAmount = parseInputToRaw(amount);
   const isDeposit = activeTab === 'deposit';
+  // Deposits: sBTC has 8 decimals, so multiply by 1e8
+  // Withdrawals: shares are whole integers, parse directly
+  const rawAmount = isDeposit
+    ? parseInputToRaw(amount)
+    : BigInt(Math.floor(Math.max(0, Number(amount) || 0)));
   
   const previewDepositData = usePreviewDeposit(config.contractName, isDeposit ? rawAmount : 0n);
   const previewWithdrawData = usePreviewWithdraw(config.contractName, !isDeposit ? rawAmount : 0n);
@@ -86,7 +90,8 @@ export function TransactionPanel({ config }: TransactionPanelProps) {
     if (isDeposit) {
       setAmount((Number(sbtcBalance) / 1e8).toString());
     } else if (position) {
-      setAmount((Number(position.shares) / 1e8).toString());
+      // Shares are whole integers (no decimals) in the contracts
+      setAmount(position.shares.toString());
     }
   };
 

@@ -65,7 +65,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     showConnect({
       appDetails: {
         name: 'Basalt Protocol',
-        icon: window.location.origin + '/basalt-icon.png',
+        icon: window.location.origin + '/basalt-icon.svg',
       },
       onFinish: () => {
         const userData = userSession.loadUserData();

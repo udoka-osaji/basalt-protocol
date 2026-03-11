@@ -59,12 +59,23 @@ export function truncateTxHash(txId: string) {
 
 /**
  * Parse user input to raw sBTC amount (bigint)
- * Handles decimal input like "1.5" -> 150000000n
+ * Uses string-based decimal parsing to avoid floating-point precision errors
+ * e.g. "1.5" -> 150000000n, "0.00000001" -> 1n
  */
 export function parseInputToRaw(input: string): bigint {
-  const num = parseFloat(input);
+  const trimmed = input.trim();
+  if (!trimmed || trimmed === '.' || trimmed === '-') return 0n;
+
+  const num = parseFloat(trimmed);
   if (isNaN(num) || num < 0) return 0n;
-  return BigInt(Math.floor(num * 1e8));
+
+  const [intPart = '0', decPart = ''] = trimmed.split('.');
+  // Pad or truncate decimal to exactly 8 digits
+  const paddedDec = (decPart + '00000000').slice(0, 8);
+  const combined = intPart + paddedDec;
+  // Remove leading zeros but keep at least "0"
+  const cleaned = combined.replace(/^0+/, '') || '0';
+  return BigInt(cleaned);
 }
 
 /**
