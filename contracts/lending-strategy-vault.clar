@@ -63,3 +63,77 @@
 (define-read-only (preview-withdraw (shares uint))
   (convert-to-assets shares)
 )
+
+;; -- Public: vault-trait implementation ---------------------------------
+
+;; Deposit: take sBTC from user -> supply to lending pool -> mint vault shares
+(define-public (deposit (assets uint))
+  (let (
+    (sender tx-sender)
+    (shares-to-mint (unwrap-panic (convert-to-shares assets)))
+  )
+    (asserts! (> assets u0) ERR-ZERO-AMOUNT)
+    (asserts! (> shares-to-mint u0) ERR-ZERO-SHARES)
+    ;; 1. Transfer sBTC from user to this contract
+    (try! (contract-call? 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token
+      transfer assets sender current-contract none))
+    ;; 2. Supply sBTC to the lending pool (as the contract)
+    (try! (as-contract?
+      ((with-ft 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token "sbtc-token" assets))
+      (try! (contract-call? .mock-lending-pool supply assets))
+    ))
+    ;; 3. Mint vault shares to user
+    (map-set share-balances sender
+      (+ (default-to u0 (map-get? share-balances sender)) shares-to-mint))
+    (var-set total-shares (+ (var-get total-shares) shares-to-mint))
+    (var-set total-assets (+ (var-get total-assets) assets))
+    (ok shares-to-mint)
+  )
+)
+
+;; Withdraw: burn shares -> redeem from lending pool -> return sBTC to user
+(define-public (withdraw (shares uint))
+  (let (
+    (sender tx-sender)
+    (sender-balance (default-to u0 (map-get? share-balances sender)))
+    (assets-to-return (unwrap-panic (convert-to-assets shares)))
+  )
+    (asserts! (> shares u0) ERR-ZERO-AMOUNT)
+    (asserts! (>= sender-balance shares) ERR-INSUFFICIENT-BALANCE)
+    ;; 1. Burn vault shares
+    (map-set share-balances sender (- sender-balance shares))
+    (var-set total-shares (- (var-get total-shares) shares))
+    (var-set total-assets (- (var-get total-assets) assets-to-return))
+    ;; 2. Redeem sBTC from lending pool (as the contract)
+    (try! (as-contract?
+      ()
+      (try! (contract-call? .mock-lending-pool redeem assets-to-return))
+    ))
+    ;; 3. Transfer sBTC back to user
+    (try! (as-contract?
+      ((with-ft 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token "sbtc-token" assets-to-return))
+      (try! (contract-call? 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token
+        transfer assets-to-return tx-sender sender none))
+    ))
+    (ok assets-to-return)
+  )
+)
+
+;; -- Admin: Sync yield from lending pool --------------------------------
+;; Periodically called to update total-assets with accrued interest.
+;; The lending pool tracks interest per depositor; this function
+;; pulls the updated balance and adjusts the vault's asset tracking.
+
+(define-public (sync-yield)
+  (let (
+    (pool-balance (unwrap-panic (contract-call? .mock-lending-pool
+      get-withdrawable-amount current-contract)))
+    (current-tracked (var-get total-assets))
+  )
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+    (asserts! (> pool-balance current-tracked) ERR-ZERO-AMOUNT)
+    ;; Update total-assets to reflect new interest
+    (var-set total-assets pool-balance)
+    (ok (- pool-balance current-tracked))
+  )
+)
