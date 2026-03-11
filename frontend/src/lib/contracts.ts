@@ -1,13 +1,12 @@
 import {
   fetchCallReadOnlyFunction,
   cvToValue,
-  uintCV,
-  standardPrincipalCV,
+  Cl,
   ClarityType,
+  Pc,
 } from '@stacks/transactions';
-import { STACKS_TESTNET } from '@stacks/network';
-import { openContractCall } from '@stacks/connect';
-import { DEPLOYER, API_URL } from '@/config/contracts';
+import { request } from '@stacks/connect';
+import { DEPLOYER, API_URL, NETWORK } from '@/config/contracts';
 
 // ── Read-only helpers ───────────────────────────────────────────────
 
@@ -22,7 +21,7 @@ async function readVault(
     contractName,
     functionName,
     functionArgs: args,
-    network: STACKS_TESTNET,
+    network: NETWORK,
     senderAddress,
   });
 
@@ -60,7 +59,7 @@ export async function getShareBalance(
   const result = await readVault(
     vault,
     'get-share-balance',
-    [standardPrincipalCV(user)],
+    [Cl.standardPrincipal(user)],
     sender
   );
   return BigInt(result);
@@ -75,7 +74,7 @@ export async function previewDeposit(
   const result = await readVault(
     vault,
     'preview-deposit',
-    [uintCV(amount)],
+    [Cl.uint(amount)],
     sender
   );
   return BigInt(result);
@@ -90,11 +89,17 @@ export async function previewWithdraw(
   const result = await readVault(
     vault,
     'preview-withdraw',
-    [uintCV(shares)],
+    [Cl.uint(shares)],
     sender
   );
   return BigInt(result);
 }
+
+// ── sBTC token contract identifier ──────────────────────────────────
+
+// On testnet, sBTC is deployed by this address
+const SBTC_CONTRACT = 'ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token';
+const SBTC_ASSET = 'sbtc-token';
 
 // ── Write operations ────────────────────────────────────────────────
 
@@ -102,34 +107,36 @@ export async function deposit(
   vault: string,
   amount: bigint
 ): Promise<string> {
-  return new Promise((resolve, reject) => {
-    openContractCall({
-      contractAddress: DEPLOYER,
-      contractName: vault,
-      functionName: 'deposit',
-      functionArgs: [uintCV(amount)],
-      network: STACKS_TESTNET,
-      onFinish: (data) => resolve(data.txId),
-      onCancel: () => reject(new Error('Transaction cancelled by user')),
-    });
+  // Post-condition: sender will send exactly `amount` sBTC to the vault
+  const postCondition = Pc.principal(DEPLOYER + '.' + vault)
+    .willSendLte(amount)
+    .ft(SBTC_CONTRACT, SBTC_ASSET);
+
+  const result = await request('stx_callContract', {
+    contract: `${DEPLOYER}.${vault}`,
+    functionName: 'deposit',
+    functionArgs: [Cl.uint(amount)],
+    network: NETWORK,
+    postConditions: [postCondition],
+    postConditionMode: 'deny',
   });
+
+  return result.txid ?? '';
 }
 
 export async function withdraw(
   vault: string,
   shares: bigint
 ): Promise<string> {
-  return new Promise((resolve, reject) => {
-    openContractCall({
-      contractAddress: DEPLOYER,
-      contractName: vault,
-      functionName: 'withdraw',
-      functionArgs: [uintCV(shares)],
-      network: STACKS_TESTNET,
-      onFinish: (data) => resolve(data.txId),
-      onCancel: () => reject(new Error('Transaction cancelled by user')),
-    });
+  const result = await request('stx_callContract', {
+    contract: `${DEPLOYER}.${vault}`,
+    functionName: 'withdraw',
+    functionArgs: [Cl.uint(shares)],
+    network: NETWORK,
+    postConditionMode: 'allow',
   });
+
+  return result.txid ?? '';
 }
 
 // ── sBTC Balance ────────────────────────────────────────────────────

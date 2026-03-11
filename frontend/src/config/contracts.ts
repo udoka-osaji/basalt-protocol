@@ -1,5 +1,5 @@
 export const DEPLOYER = 'ST1VZVQT5H74YFFEN8VD4KDQEZVW21ZJ6EVK8DZ1D';
-export const NETWORK = 'testnet';
+export const NETWORK = 'testnet' as const;
 export const API_URL = 'https://api.testnet.hiro.so';
 export const EXPLORER_URL = 'https://explorer.hiro.so';
 

@@ -11,6 +11,7 @@ import { usePreviewDeposit, usePreviewWithdraw } from '@/hooks/usePreview';
 import { useTxStatus } from '@/hooks/useTxStatus';
 import { formatSbtc, formatShares, parseInputToRaw } from '@/lib/format';
 import { getErrorMessage, getExplorerUrl } from '@/config/contracts';
+import { JsonRpcError } from '@stacks/connect';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, ExternalLink, Loader2, Wallet } from 'lucide-react';
 
@@ -116,13 +117,18 @@ export function TransactionPanel({ config }: TransactionPanelProps) {
     } catch (err: any) {
       setTxState('failed');
       
-      // Check if it's a known contract error
-      const errString = err.toString();
-      const match = errString.match(/error: (\d+)/);
-      if (match) {
-        setTxError(getErrorMessage(parseInt(match[1])));
+      if (err instanceof JsonRpcError) {
+        // Wallet returned a structured error (user cancel, rejection, etc.)
+        setTxError(err.message || 'Transaction rejected by wallet');
       } else {
-        setTxError(err.message || 'Transaction failed or was rejected');
+        // Check if it's a known contract error
+        const errString = err.toString();
+        const match = errString.match(/error: (\d+)/);
+        if (match) {
+          setTxError(getErrorMessage(parseInt(match[1])));
+        } else {
+          setTxError(err.message || 'Transaction failed or was rejected');
+        }
       }
     }
   };
