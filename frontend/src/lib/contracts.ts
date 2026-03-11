@@ -105,10 +105,11 @@ const SBTC_ASSET = 'sbtc-token';
 
 export async function deposit(
   vault: string,
-  amount: bigint
+  amount: bigint,
+  senderAddress: string
 ): Promise<string> {
-  // Post-condition: sender will send exactly `amount` sBTC to the vault
-  const postCondition = Pc.principal(DEPLOYER + '.' + vault)
+  // Post-condition: the user (sender) will send at most `amount` sBTC
+  const postCondition = Pc.principal(senderAddress)
     .willSendLte(amount)
     .ft(SBTC_CONTRACT, SBTC_ASSET);
 

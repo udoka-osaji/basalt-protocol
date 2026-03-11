@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { getVaultBySlug } from '@/config/vaults';
 import { useVaultStats } from '@/hooks/useVaultStats';
 import { useUserPosition } from '@/hooks/useUserPosition';
-import { formatSbtc, formatShares, calculateEstimatedApy, formatApy } from '@/lib/format';
+import { formatSbtc, formatShares, calculateTotalReturn, formatApy } from '@/lib/format';
 import { TransactionPanel } from '@/components/transaction/TransactionPanel';
 import { FlowDiagram } from '@/components/vault/FlowDiagram';
 
@@ -117,12 +117,12 @@ export default function VaultDetail() {
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
-                <div className="body-sm text-foreground-tertiary font-medium">Estimated APY</div>
+                <div className="body-sm text-foreground-tertiary font-medium">Total Return</div>
                 {statsLoading ? (
                   <div className="w-16 h-7 rounded bg-background-surface-raised animate-shimmer" />
                 ) : (
                   <div className={`numeric-md ${(stats?.sharePrice || 1) > 1 ? 'text-success' : 'text-foreground-secondary'}`}>
-                    {formatApy(calculateEstimatedApy(stats?.sharePrice || 1))}
+                    {formatApy(calculateTotalReturn(stats?.sharePrice || 1))}
                   </div>
                 )}
               </div>
