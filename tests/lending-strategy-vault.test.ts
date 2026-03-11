@@ -54,3 +54,55 @@ describe("lending-strategy-vault", () => {
     );
     expect(result).toBeErr(Cl.uint(4001));
   });
+
+  it("withdraws sBTC from lending pool back to user", () => {
+    simnet.callPublicFn("lending-strategy-vault", "deposit", [Cl.uint(5000)], wallet1);
+
+    const { result } = simnet.callPublicFn(
+      "lending-strategy-vault",
+      "withdraw",
+      [Cl.uint(5000)],
+      wallet1
+    );
+    expect(result).toBeOk(Cl.uint(5000));
+
+    // Vault should be empty
+    const vaultAssets = simnet.callReadOnlyFn("lending-strategy-vault", "get-total-assets", [], deployer);
+    expect(vaultAssets.result).toBeOk(Cl.uint(0));
+
+    const vaultShares = simnet.callReadOnlyFn("lending-strategy-vault", "get-total-shares", [], deployer);
+    expect(vaultShares.result).toBeOk(Cl.uint(0));
+
+    // Lending pool should be empty for this vault
+    const vaultPrincipal = `${deployer}.lending-strategy-vault`;
+    const poolBalance = simnet.callReadOnlyFn(
+      "mock-lending-pool",
+      "get-depositor-balance",
+      [Cl.principal(vaultPrincipal)],
+      deployer
+    );
+    expect(poolBalance.result).toBeOk(
+      Cl.tuple({ "principal-amount": Cl.uint(0), "interest-earned": Cl.uint(0) })
+    );
+  });
+
+  it("rejects withdrawal of zero shares", () => {
+    const { result } = simnet.callPublicFn(
+      "lending-strategy-vault",
+      "withdraw",
+      [Cl.uint(0)],
+      wallet1
+    );
+    expect(result).toBeErr(Cl.uint(4001));
+  });
+
+  it("rejects withdrawal exceeding balance", () => {
+    simnet.callPublicFn("lending-strategy-vault", "deposit", [Cl.uint(500)], wallet1);
+    const { result } = simnet.callPublicFn(
+      "lending-strategy-vault",
+      "withdraw",
+      [Cl.uint(1000)],
+      wallet1
+    );
+    expect(result).toBeErr(Cl.uint(4002));
+  });
