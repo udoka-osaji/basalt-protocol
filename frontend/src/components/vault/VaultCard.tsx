@@ -4,7 +4,7 @@ import { VaultConfig } from '@/config/vaults';
 import { useVaultStats } from '@/hooks/useVaultStats';
 import { useUserPosition } from '@/hooks/useUserPosition';
 import { useWallet } from '@/context/WalletContext';
-import { formatSbtc, formatShares, calculateEstimatedApy, formatApy } from '@/lib/format';
+import { formatSbtc, formatShares, calculateTotalReturn, formatApy } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 
 interface VaultCardProps {
@@ -57,12 +57,12 @@ export function VaultCard({ config }: VaultCardProps) {
             )}
           </div>
           <div className="text-center flex flex-col gap-1">
-            <div className="body-sm text-foreground-tertiary">Est. APY</div>
+            <div className="body-sm text-foreground-tertiary">Total Return</div>
             {statsLoading ? (
               <div className="w-12 h-5 rounded bg-background-surface-raised animate-shimmer mx-auto" />
             ) : (
               <div className={`numeric-sm ${(stats?.sharePrice || 1) > 1 ? 'text-success' : 'text-foreground-tertiary'}`}>
-                {formatApy(calculateEstimatedApy(stats?.sharePrice || 1))}
+                {formatApy(calculateTotalReturn(stats?.sharePrice || 1))}
               </div>
             )}
           </div>

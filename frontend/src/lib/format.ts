@@ -87,10 +87,10 @@ export function calculateSharePrice(totalAssets: bigint, totalShares: bigint): n
 }
 
 /**
- * Calculate estimated APY from share price deviation
+ * Calculate total return from share price deviation
  * Returns percentage (e.g. 5.25 for 5.25%)
  */
-export function calculateEstimatedApy(sharePrice: number): number {
+export function calculateTotalReturn(sharePrice: number): number {
   return (sharePrice - 1) * 100;
 }
 
