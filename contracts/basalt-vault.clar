@@ -66,3 +66,65 @@
 (define-read-only (preview-withdraw (shares uint))
   (convert-to-assets shares)
 )
+
+;; -- Public: vault-trait implementation --------------------------------
+
+(define-public (deposit (assets uint))
+  (let (
+    (sender tx-sender)
+    (shares-to-mint (unwrap-panic (convert-to-shares assets)))
+  )
+    (asserts! (> assets u0) ERR-ZERO-AMOUNT)
+    (asserts! (> shares-to-mint u0) ERR-ZERO-SHARES)
+    ;; Transfer sBTC from sender to vault
+    (try! (contract-call? 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token
+      transfer assets sender current-contract none))
+    ;; Mint shares
+    (map-set share-balances sender
+      (+ (default-to u0 (map-get? share-balances sender)) shares-to-mint))
+    (var-set total-shares (+ (var-get total-shares) shares-to-mint))
+    (var-set total-assets (+ (var-get total-assets) assets))
+    (ok shares-to-mint)
+  )
+)
+
+(define-public (withdraw (shares uint))
+  (let (
+    (sender tx-sender)
+    (sender-balance (default-to u0 (map-get? share-balances sender)))
+    (assets-to-return (unwrap-panic (convert-to-assets shares)))
+  )
+    (asserts! (> shares u0) ERR-ZERO-AMOUNT)
+    (asserts! (>= sender-balance shares) ERR-INSUFFICIENT-BALANCE)
+    (asserts! (> assets-to-return u0) ERR-ZERO-AMOUNT)
+    ;; Burn shares
+    (map-set share-balances sender (- sender-balance shares))
+    (var-set total-shares (- (var-get total-shares) shares))
+    (var-set total-assets (- (var-get total-assets) assets-to-return))
+    ;; Transfer sBTC from vault to sender
+    (try! (as-contract?
+      ((with-ft 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token "sbtc-token" assets-to-return))
+      (try! (contract-call? 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token
+        transfer assets-to-return tx-sender sender none))
+    ))
+    (ok assets-to-return)
+  )
+)
+
+;; -- Admin: simulate yield accrual (for demo/testing) -----------------
+;; In production, yield would come from an external strategy.
+;; This function lets the owner inject assets to grow the share price.
+
+(define-public (harvest-yield (additional-assets uint))
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+    (asserts! (> additional-assets u0) ERR-ZERO-AMOUNT)
+    ;; Transfer sBTC yield into vault
+    (try! (contract-call? 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token
+      transfer additional-assets tx-sender current-contract none))
+    ;; Increase total assets (shares stay the same -> price per share increases)
+    (var-set total-assets (+ (var-get total-assets) additional-assets))
+    (ok additional-assets)
+  )
+)
+
