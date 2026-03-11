@@ -59,3 +59,81 @@ describe("cross-vault composability", () => {
     );
     expect(basaltBalance.result).toBeOk(Cl.uint(2000));
   });
+
+  it("lending-strategy-vault composes with mock-lending-pool", () => {
+    // Deposit through strategy vault into lending pool
+    const strategyDeposit = simnet.callPublicFn(
+      "lending-strategy-vault",
+      "deposit",
+      [Cl.uint(4000)],
+      wallet1
+    );
+    expect(strategyDeposit.result).toBeOk(Cl.uint(4000));
+
+    // Lending pool should have the deposit from the vault contract
+    const vaultPrincipal = `${deployer}.lending-strategy-vault`;
+    const poolBalance = simnet.callReadOnlyFn(
+      "mock-lending-pool",
+      "get-depositor-balance",
+      [Cl.principal(vaultPrincipal)],
+      deployer
+    );
+    expect(poolBalance.result).toBeOk(
+      Cl.tuple({ "principal-amount": Cl.uint(4000), "interest-earned": Cl.uint(0) })
+    );
+  });
+
+  it("all vault implementations share the same trait interface", () => {
+    // All three vault contracts implement the same trait
+    // Verify they all respond to the same set of read-only calls
+
+    const vaults = ["basalt-vault", "sbtc-yield-vault", "lending-strategy-vault"];
+
+    for (const vault of vaults) {
+      const assets = simnet.callReadOnlyFn(vault, "get-total-assets", [], deployer);
+      expect(assets.result).toBeOk(Cl.uint(0));
+
+      const shares = simnet.callReadOnlyFn(vault, "get-total-shares", [], deployer);
+      expect(shares.result).toBeOk(Cl.uint(0));
+
+      const balance = simnet.callReadOnlyFn(
+        vault,
+        "get-share-balance",
+        [Cl.principal(wallet1)],
+        deployer
+      );
+      expect(balance.result).toBeOk(Cl.uint(0));
+
+      const toShares = simnet.callReadOnlyFn(
+        vault,
+        "convert-to-shares",
+        [Cl.uint(1000)],
+        deployer
+      );
+      expect(toShares.result).toBeOk(Cl.uint(1000));
+
+      const toAssets = simnet.callReadOnlyFn(
+        vault,
+        "convert-to-assets",
+        [Cl.uint(1000)],
+        deployer
+      );
+      expect(toAssets.result).toBeOk(Cl.uint(1000));
+
+      const previewDep = simnet.callReadOnlyFn(
+        vault,
+        "preview-deposit",
+        [Cl.uint(1000)],
+        deployer
+      );
+      expect(previewDep.result).toBeOk(Cl.uint(1000));
+
+      const previewWith = simnet.callReadOnlyFn(
+        vault,
+        "preview-withdraw",
+        [Cl.uint(1000)],
+        deployer
+      );
+      expect(previewWith.result).toBeOk(Cl.uint(1000));
+    }
+  });
