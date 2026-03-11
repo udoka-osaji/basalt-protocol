@@ -137,3 +137,53 @@ describe("cross-vault composability", () => {
       expect(previewWith.result).toBeOk(Cl.uint(1000));
     }
   });
+
+  it("multi-user multi-vault scenario", () => {
+    // wallet1 deposits into basalt-vault
+    simnet.callPublicFn("basalt-vault", "deposit", [Cl.uint(10000)], wallet1);
+
+    // wallet2 deposits into lending-strategy-vault
+    simnet.callPublicFn("lending-strategy-vault", "deposit", [Cl.uint(8000)], wallet2);
+
+    // wallet3 deposits into meta-vault (sbtc-yield-vault -> basalt-vault)
+    simnet.callPublicFn("sbtc-yield-vault", "deposit", [Cl.uint(6000)], wallet3);
+
+    // basalt-vault now has 10000 (direct) + 6000 (from meta-vault) = 16000
+    const basaltTotal = simnet.callReadOnlyFn("basalt-vault", "get-total-assets", [], deployer);
+    expect(basaltTotal.result).toBeOk(Cl.uint(16000));
+
+    // lending pool has 8000 from strategy vault
+    const vaultPrincipal = `${deployer}.lending-strategy-vault`;
+    const poolWithdrawable = simnet.callReadOnlyFn(
+      "mock-lending-pool",
+      "get-withdrawable-amount",
+      [Cl.principal(vaultPrincipal)],
+      deployer
+    );
+    expect(poolWithdrawable.result).toBeOk(Cl.uint(8000));
+
+    // Everyone can withdraw independently
+    const w1Withdraw = simnet.callPublicFn(
+      "basalt-vault",
+      "withdraw",
+      [Cl.uint(10000)],
+      wallet1
+    );
+    expect(w1Withdraw.result).toBeOk(Cl.uint(10000));
+
+    const w2Withdraw = simnet.callPublicFn(
+      "lending-strategy-vault",
+      "withdraw",
+      [Cl.uint(8000)],
+      wallet2
+    );
+    expect(w2Withdraw.result).toBeOk(Cl.uint(8000));
+
+    const w3Withdraw = simnet.callPublicFn(
+      "sbtc-yield-vault",
+      "withdraw",
+      [Cl.uint(6000)],
+      wallet3
+    );
+    expect(w3Withdraw.result).toBeOk(Cl.uint(6000));
+  });
