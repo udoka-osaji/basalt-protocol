@@ -161,3 +161,59 @@ describe("lending-strategy-vault", () => {
     const vaultShares = simnet.callReadOnlyFn("lending-strategy-vault", "get-total-shares", [], deployer);
     expect(vaultShares.result).toBeOk(Cl.uint(10000));
   });
+
+  it("sync-yield rejects non-owner", () => {
+    simnet.callPublicFn("lending-strategy-vault", "deposit", [Cl.uint(1000)], wallet1);
+    const vaultPrincipal = `${deployer}.lending-strategy-vault`;
+    simnet.callPublicFn(
+      "mock-lending-pool",
+      "accrue-interest",
+      [Cl.principal(vaultPrincipal), Cl.uint(100)],
+      deployer
+    );
+
+    const { result } = simnet.callPublicFn(
+      "lending-strategy-vault",
+      "sync-yield",
+      [],
+      wallet1
+    );
+    expect(result).toBeErr(Cl.uint(4000));
+  });
+
+  it("sync-yield rejects when no new interest", () => {
+    simnet.callPublicFn("lending-strategy-vault", "deposit", [Cl.uint(1000)], wallet1);
+
+    const { result } = simnet.callPublicFn(
+      "lending-strategy-vault",
+      "sync-yield",
+      [],
+      deployer
+    );
+    expect(result).toBeErr(Cl.uint(4001));
+  });
+
+  it("share price appreciates after yield sync", () => {
+    // wallet1 deposits 10000
+    simnet.callPublicFn("lending-strategy-vault", "deposit", [Cl.uint(10000)], wallet1);
+
+    // Accrue 2000 interest
+    const vaultPrincipal = `${deployer}.lending-strategy-vault`;
+    simnet.callPublicFn(
+      "mock-lending-pool",
+      "accrue-interest",
+      [Cl.principal(vaultPrincipal), Cl.uint(2000)],
+      deployer
+    );
+    simnet.callPublicFn("lending-strategy-vault", "sync-yield", [], deployer);
+
+    // wallet2 deposits 12000 (should get 10000 shares: 12000 * 10000 / 12000)
+    const { result } = simnet.callPublicFn(
+      "lending-strategy-vault",
+      "deposit",
+      [Cl.uint(12000)],
+      wallet2
+    );
+    expect(result).toBeOk(Cl.uint(10000));
+  });
+});
