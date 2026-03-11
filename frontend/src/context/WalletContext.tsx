@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { AppConfig, UserSession, showConnect } from '@stacks/connect';
+import {
+  connect as stacksConnect,
+  disconnect as stacksDisconnect,
+  isConnected as stacksIsConnected,
+  getLocalStorage,
+} from '@stacks/connect';
 import { getSbtcBalance } from '@/lib/contracts';
+import { NETWORK } from '@/config/contracts';
 
 interface WalletContextType {
   address: string | null;
@@ -14,15 +20,21 @@ interface WalletContextType {
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
-const appConfig = new AppConfig(['store_write']);
-const userSession = new UserSession({ appConfig });
+function getStxAddress(): string | null {
+  const data = getLocalStorage();
+  if (!data?.addresses?.stx?.length) return null;
+  return data.addresses.stx[0].address ?? null;
+}
 
 interface WalletProviderProps {
   children: ReactNode;
 }
 
 export function WalletProvider({ children }: WalletProviderProps) {
-  const [address, setAddress] = useState<string | null>(null);
+  const [address, setAddress] = useState<string | null>(() => {
+    // Restore from localStorage on mount
+    return stacksIsConnected() ? getStxAddress() : null;
+  });
   const [isConnecting, setIsConnecting] = useState(false);
   const [sbtcBalance, setSbtcBalance] = useState<bigint>(0n);
 
@@ -36,54 +48,31 @@ export function WalletProvider({ children }: WalletProviderProps) {
   }, [address]);
 
   useEffect(() => {
-    try {
-      if (userSession.isUserSignedIn()) {
-        const userData = userSession.loadUserData();
-        const stxAddress = userData.profile?.stxAddress?.testnet;
-        if (stxAddress) {
-          setAddress(stxAddress);
-        }
-      }
-    } catch {
-      // Clear corrupted session data
-      userSession.signUserOut();
-      console.warn('Cleared invalid Stacks session data');
-    }
-  }, []);
-
-  useEffect(() => {
     if (address) {
       refreshBalance();
-      // Poll balance every 30 seconds
       const interval = setInterval(refreshBalance, 30000);
       return () => clearInterval(interval);
     }
   }, [address, refreshBalance]);
 
-  const connect = useCallback(() => {
+  const connect = useCallback(async () => {
     setIsConnecting(true);
-    showConnect({
-      appDetails: {
-        name: 'Basalt Protocol',
-        icon: window.location.origin + '/basalt-icon.svg',
-      },
-      onFinish: () => {
-        const userData = userSession.loadUserData();
-        const stxAddress = userData.profile?.stxAddress?.testnet;
-        if (stxAddress) {
-          setAddress(stxAddress);
-        }
-        setIsConnecting(false);
-      },
-      onCancel: () => {
-        setIsConnecting(false);
-      },
-      userSession,
-    });
+    try {
+      const result = await stacksConnect({ network: NETWORK });
+      // Find STX address from the returned addresses
+      const stxEntry = result.addresses.find((a) => a.symbol === 'STX');
+      if (stxEntry) {
+        setAddress(stxEntry.address);
+      }
+    } catch {
+      // User cancelled or wallet error
+    } finally {
+      setIsConnecting(false);
+    }
   }, []);
 
   const disconnect = useCallback(() => {
-    userSession.signUserOut();
+    stacksDisconnect();
     setAddress(null);
     setSbtcBalance(0n);
   }, []);

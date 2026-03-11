@@ -1,4 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <rect width="128" height="128" rx="24" fill="#F97316"/>
-  <text x="64" y="88" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="80" fill="white">B</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F97316"/>
+      <stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.15)"/>
+      <stop offset="50%" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+  </defs>
+  <!-- Background with rounded corners -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Subtle top highlight for depth -->
+  <rect width="512" height="256" rx="96" fill="url(#shine)"/>
+  <!-- Basalt column motif — three stacked hexagonal prisms representing vault layers -->
+  <!-- Bottom layer (widest) -->
+  <polygon points="256,380 148,348 148,308 256,340 364,308 364,348" fill="rgba(255,255,255,0.95)"/>
+  <polygon points="256,340 148,308 148,268 256,300 364,268 364,308" fill="rgba(255,255,255,0.75)"/>
+  <!-- Middle layer -->
+  <polygon points="256,300 168,272 168,232 256,260 344,232 344,272" fill="rgba(255,255,255,0.95)"/>
+  <polygon points="256,260 168,232 168,192 256,220 344,192 344,232" fill="rgba(255,255,255,0.75)"/>
+  <!-- Top layer (narrowest) — the vault apex -->
+  <polygon points="256,220 188,196 188,156 256,180 324,156 324,196" fill="rgba(255,255,255,0.95)"/>
+  <polygon points="256,180 188,156 188,128 256,152 324,128 324,156" fill="rgba(255,255,255,0.75)"/>
+  <!-- Upward arrow inside — representing yield growth -->
+  <polygon points="256,132 232,164 244,164 244,200 268,200 268,164 280,164" fill="url(#bg)" opacity="0.9"/>
 </svg>
