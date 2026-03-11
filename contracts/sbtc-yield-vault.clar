@@ -63,3 +63,61 @@
 (define-read-only (preview-withdraw (shares uint))
   (convert-to-assets shares)
 )
+
+;; -- Public: vault-trait implementation ---------------------------------
+
+;; Deposit: take sBTC from user -> deposit into basalt-vault -> mint meta-shares
+(define-public (deposit (assets uint))
+  (let (
+    (sender tx-sender)
+    (meta-shares (unwrap-panic (convert-to-shares assets)))
+  )
+    (asserts! (> assets u0) ERR-ZERO-AMOUNT)
+    (asserts! (> meta-shares u0) ERR-ZERO-SHARES)
+    ;; 1. Transfer sBTC from user to this contract
+    (try! (contract-call? 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token
+      transfer assets sender current-contract none))
+    ;; 2. This contract deposits into basalt-vault
+    (try! (as-contract?
+      ((with-ft 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token "sbtc-token" assets))
+      (try! (contract-call? .basalt-vault deposit assets))
+    ))
+    ;; 3. Mint meta-vault shares to user
+    (map-set share-balances sender
+      (+ (default-to u0 (map-get? share-balances sender)) meta-shares))
+    (var-set total-shares (+ (var-get total-shares) meta-shares))
+    (var-set total-assets (+ (var-get total-assets) assets))
+    (ok meta-shares)
+  )
+)
+
+;; Withdraw: burn meta-shares -> withdraw from basalt-vault -> return sBTC to user
+(define-public (withdraw (shares uint))
+  (let (
+    (sender tx-sender)
+    (sender-balance (default-to u0 (map-get? share-balances sender)))
+    (assets-to-return (unwrap-panic (convert-to-assets shares)))
+  )
+    (asserts! (> shares u0) ERR-ZERO-AMOUNT)
+    (asserts! (>= sender-balance shares) ERR-INSUFFICIENT-BALANCE)
+    ;; 1. Burn meta-shares
+    (map-set share-balances sender (- sender-balance shares))
+    (var-set total-shares (- (var-get total-shares) shares))
+    (var-set total-assets (- (var-get total-assets) assets-to-return))
+    ;; 2. Withdraw from basalt-vault (contract is the depositor)
+    (let ((underlying-shares (unwrap-panic (contract-call? .basalt-vault convert-to-shares assets-to-return))))
+      (try! (as-contract?
+        ()
+        (try! (contract-call? .basalt-vault withdraw underlying-shares))
+      ))
+    )
+    ;; 3. Transfer sBTC back to user
+    (try! (as-contract?
+      ((with-ft 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token "sbtc-token" assets-to-return))
+      (try! (contract-call? 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token
+        transfer assets-to-return tx-sender sender none))
+    ))
+    (ok assets-to-return)
+  )
+)
+
