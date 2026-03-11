@@ -31,7 +31,7 @@ export function Footer() {
 
         <div className="flex items-center gap-4">
           <a
-            href="https://twitter.com"
+            href="https://twitter.com/basaborProtocol"
             target="_blank"
             rel="noopener noreferrer"
             className="p-2 text-foreground-tertiary hover:text-foreground hover:bg-background-surface-raised rounded-lg transition-colors"
@@ -40,7 +40,7 @@ export function Footer() {
             <TwitterIcon className="w-4 h-4" />
           </a>
           <a
-            href="https://discord.com"
+            href="https://discord.gg/basalt"
             target="_blank"
             rel="noopener noreferrer"
             className="p-2 text-foreground-tertiary hover:text-foreground hover:bg-background-surface-raised rounded-lg transition-colors"
@@ -49,7 +49,7 @@ export function Footer() {
             <DiscordIcon className="w-4 h-4" />
           </a>
           <a
-            href="https://github.com/hirosystems/stacks.js"
+            href="https://github.com/udoka-osaji/basalt-protocol"
             target="_blank"
             rel="noopener noreferrer"
             className="p-2 text-foreground-tertiary hover:text-foreground hover:bg-background-surface-raised rounded-lg transition-colors"

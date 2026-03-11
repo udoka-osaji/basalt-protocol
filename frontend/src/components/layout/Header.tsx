@@ -63,7 +63,7 @@ export function Header() {
                   </Link>
                 ))}
                 <a
-                  href="https://github.com/basalt-protocol"
+                  href="https://github.com/udoka-osaji/basalt-protocol"
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setOpen(false)}
@@ -104,7 +104,7 @@ export function Header() {
               </Link>
             ))}
             <a
-              href="https://github.com/basalt-protocol"
+              href="https://github.com/udoka-osaji/basalt-protocol"
               target="_blank"
               rel="noopener noreferrer"
               className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors text-foreground-secondary hover:text-foreground inline-flex items-center gap-1.5"
