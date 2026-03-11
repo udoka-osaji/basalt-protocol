@@ -1,0 +1,197 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Background layers */
+    --background: 240 10% 3.9%;
+    --background-surface: 240 6% 10%;
+    --background-surface-raised: 240 5% 17%;
+    --background-surface-input: 240 6% 12%;
+
+    /* Foreground / Text */
+    --foreground: 0 0% 98%;
+    --foreground-secondary: 240 4% 65%;
+    --foreground-tertiary: 240 4% 46%;
+    --foreground-disabled: 240 4% 35%;
+
+    /* Card */
+    --card: 240 6% 10%;
+    --card-foreground: 0 0% 98%;
+
+    /* Popover */
+    --popover: 240 6% 10%;
+    --popover-foreground: 0 0% 98%;
+
+    /* Primary - Orange accent */
+    --primary: 24 95% 53%;
+    --primary-hover: 21 90% 48%;
+    --primary-foreground: 0 0% 100%;
+    --primary-muted: 24 95% 53%;
+
+    /* Secondary */
+    --secondary: 240 5% 17%;
+    --secondary-foreground: 0 0% 98%;
+
+    /* Muted */
+    --muted: 240 6% 10%;
+    --muted-foreground: 240 4% 65%;
+
+    /* Accent */
+    --accent: 24 95% 53%;
+    --accent-foreground: 0 0% 100%;
+    --accent-muted: 24 95% 53%;
+
+    /* Destructive / Error */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --destructive-muted: 0 84% 60%;
+
+    /* Success */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --success-muted: 142 71% 45%;
+
+    /* Warning */
+    --warning: 48 96% 53%;
+    --warning-foreground: 0 0% 0%;
+    --warning-muted: 48 96% 53%;
+
+    /* Borders */
+    --border: 240 5% 17%;
+    --border-subtle: 240 4% 26%;
+    --border-focus: 24 95% 53%;
+    --input: 240 5% 17%;
+    --ring: 24 95% 53%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar - matching dark theme */
+    --sidebar-background: 240 6% 10%;
+    --sidebar-foreground: 240 4% 95%;
+    --sidebar-primary: 24 95% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 5% 17%;
+    --sidebar-accent-foreground: 240 4% 95%;
+    --sidebar-border: 240 5% 17%;
+    --sidebar-ring: 24 95% 53%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Typography utilities */
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .font-sans {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  /* Display typography */
+  .display-lg {
+    @apply font-sans text-[40px] leading-[48px] font-semibold tracking-[-0.02em];
+  }
+
+  .display-md {
+    @apply font-sans text-[32px] leading-[40px] font-semibold tracking-[-0.02em];
+  }
+
+  /* Heading typography */
+  .heading-lg {
+    @apply font-sans text-2xl leading-8 font-semibold tracking-[-0.01em];
+  }
+
+  .heading-md {
+    @apply font-sans text-xl leading-7 font-medium;
+  }
+
+  .heading-sm {
+    @apply font-sans text-base leading-6 font-medium;
+  }
+
+  /* Body typography */
+  .body-lg {
+    @apply font-sans text-base leading-6 font-normal;
+  }
+
+  .body-md {
+    @apply font-sans text-sm leading-5 font-normal;
+  }
+
+  .body-sm {
+    @apply font-sans text-xs leading-4 font-normal;
+  }
+
+  /* Numeric typography */
+  .numeric-lg {
+    @apply font-mono text-[28px] leading-9 font-medium tracking-[-0.02em];
+  }
+
+  .numeric-md {
+    @apply font-mono text-xl leading-7 font-medium tracking-[-0.01em];
+  }
+
+  .numeric-sm {
+    @apply font-mono text-sm leading-5 font-normal;
+  }
+
+  .numeric-xs {
+    @apply font-mono text-xs leading-4 font-normal;
+  }
+}
+
+@layer utilities {
+  /* Shimmer animation for loading states */
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--background-surface)) 25%,
+      hsl(var(--background-surface-raised)) 50%,
+      hsl(var(--background-surface)) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  /* Custom scrollbar for dark theme */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--border-subtle));
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--foreground-tertiary));
+  }
+}
